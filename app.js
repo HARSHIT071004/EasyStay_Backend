@@ -63,5 +63,5 @@ pool.query('SELECT * FROM users', (err) => {
 // 🟢 Start Server
 // ==============================
 app.listen(process.env.PORT, () => {
-  console.log(`🚀 EasyStay Backend running on port ${port}`);
+  console.log(`🚀 EasyStay Backend running on port ${process.env.PORT}`);
 });
