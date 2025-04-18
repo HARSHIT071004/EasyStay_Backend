@@ -1,66 +1,85 @@
-//Libraries
-var express = require('express');
-var path = require('path');
-// App Instance
-var app = express();
-var bodyParser = require('body-parser');
-var session = require('express-session');
-var cors = require('cors');
-var pool = require('./src/models/UserDB.js');
+// ==============================
+// 📦 Imports
+// ==============================
+const express = require('express');
+const path = require('path');
+const bodyParser = require('body-parser');
+const session = require('express-session');
+const cors = require('cors');
 
-//server configuration
-var basePath = '/homeaway';
-var port = 3001;
+const pool = require('./src/models/UserDB.js');
+const loginRoutes = require('./src/routes/loginRoute.js');
+const propertyRoutes = require('./src/routes/propertyRoutes.js');
+const propertySearch = require('./src/routes/propertysearchwithoutpooling.js');
 
-//use express session to maintain session data
+// ==============================
+// 🚀 App Initialization
+// ==============================
+const app = express();
+const basePath = '/homeaway';
+const port = 3001;
+const allowedOrigin = 'https://easystay-sigma.vercel.app';
+
+// ==============================
+// 🛡️ Middleware
+// ==============================
+
+// Session Configuration
 app.use(session({
-  secret              : 'cmpe273_homeaway_mysql',
-  resave              : false, // Forces the session to be saved back to the session store, even if the session was never modified during the request
-  saveUninitialized   : false, // Force to save uninitialized session to db. A session is uninitialized when it is new but not modified.
-  duration            : 60 * 60 * 1000,    // Overall duration of Session : 30 minutes : 1800 seconds
-  activeDuration      :  5 * 60 * 1000
+  secret: 'cmpe273_homeaway_mysql',
+  resave: false,
+  saveUninitialized: false,
+  duration: 60 * 60 * 1000,
+  activeDuration: 5 * 60 * 1000
 }));
 
-app.get('/',(req,res) => {
-   res.json({
-    message: "EasyStay is running !"
-   })
-})
+// CORS Configuration
+app.use(cors({
+  origin: allowedOrigin,
+  credentials: true
+}));
 
-//Allow Access Control
-app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://easystay-sigma.vercel.app/');
+// Custom Access-Control Headers
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers');
   res.setHeader('Cache-Control', 'no-cache');
   next();
 });
 
-pool.query('select * from users',  function(err, rows){
-  if(err) throw err;
-  else {
-    console.log("Connection to DB established");
-  }
-});  
-
-// Routes and Backend Funcioncalities
-var loginRoutes = require('./src/routes/loginRoute.js');
-var propertyRoutes = require('./src/routes/propertyRoutes.js');
-var propertySearch = require('./src/routes/propertysearchwithoutpooling.js');
-
-app.use(express.static('public'));
-//use cors to allow cross origin resource sharing
-app.use(cors({ origin: 'https://easystay-sigma.vercel.app/', credentials: true }));
-app.use(bodyParser.urlencoded({extended: true}));
+// Body Parsers
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+// Static Files
+app.use('/uploads', express.static(path.join(__dirname, '/uploads/')));
+app.use(express.static('public'));
+
+// ==============================
+// 📂 Routes
+// ==============================
 app.use(basePath, loginRoutes);
 app.use(basePath, propertyRoutes);
 app.use(basePath, propertySearch);
-app.use('/uploads', express.static(path.join(__dirname, '/uploads/')));
 
+// Test Route
+app.get('/', (req, res) => {
+  res.json({ message: "EasyStay is running!" });
+});
 
-// Execute App
+// ==============================
+// 🛢️ DB Connection Check
+// ==============================
+pool.query('SELECT * FROM users', (err) => {
+  if (err) throw err;
+  console.log("✅ Connected to DB");
+});
+
+// ==============================
+// 🟢 Start Server
+// ==============================
 app.listen(port, () => {
-  console.log('HomeAway Backend running on Port: ',port);
+  console.log(`🚀 EasyStay Backend running on port ${port}`);
 });
